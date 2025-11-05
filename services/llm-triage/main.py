@@ -2,7 +2,7 @@
 LLM Triage Service - Classify service requests using LLM.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import orjson
 import re
 from anthropic import Anthropic
@@ -13,6 +13,21 @@ from shared.utils.logging import setup_logging, get_logger
 
 setup_logging(settings.log_level)
 logger = get_logger(__name__)
+
+# Import Ollama if available
+try:
+    from shared.utils.ollama_client import get_ollama_client
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logger.warning("ollama_not_available", message="Install ollama package for local LLM support")
+
+# Import OpenAI if available
+try:
+    from openai import AsyncOpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
 
 
 TRIAGE_PROMPT_TEMPLATE = """You are an expert Seattle municipal service classifier. Your task is to accurately categorize citizen service requests.
@@ -118,12 +133,45 @@ class LLMTriageService:
     """LLM-powered service classification."""
 
     def __init__(self):
+        self.provider = settings.llm_provider.lower()
         self.client = None
-        if settings.anthropic_api_key and not settings.mock_llm:
-            self.client = Anthropic(api_key=settings.anthropic_api_key)
-            logger.info("llm_triage_initialized", provider="anthropic")
-        else:
+        self.ollama_client = None
+        self.openai_client = None
+
+        if settings.mock_llm:
             logger.warning("using_mock_llm_triage")
+            return
+
+        # Initialize based on provider
+        if self.provider == "claude" or self.provider == "anthropic":
+            if settings.anthropic_api_key:
+                self.client = Anthropic(api_key=settings.anthropic_api_key)
+                logger.info("llm_triage_initialized", provider="claude", model=settings.claude_model)
+            else:
+                logger.warning("anthropic_api_key_missing")
+
+        elif self.provider == "openai":
+            if settings.openai_api_key and OPENAI_AVAILABLE:
+                self.openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+                logger.info("llm_triage_initialized", provider="openai", model=settings.openai_model)
+            else:
+                logger.warning("openai_api_key_missing_or_not_installed")
+
+        elif self.provider == "ollama":
+            if OLLAMA_AVAILABLE:
+                self.ollama_client = get_ollama_client()
+                if self.ollama_client.is_available():
+                    logger.info("llm_triage_initialized", provider="ollama", model=settings.ollama_model)
+                else:
+                    logger.warning("ollama_not_running", message="Start Ollama with: ollama serve")
+            else:
+                logger.warning("ollama_package_not_installed")
+
+        else:
+            logger.warning("unknown_llm_provider", provider=self.provider)
+
+        if not any([self.client, self.openai_client, self.ollama_client]):
+            logger.warning("no_llm_available_using_fallback")
 
     async def classify(
         self,
@@ -142,25 +190,24 @@ class LLMTriageService:
         Returns:
             Classification with service code and reasoning
         """
-        if settings.mock_llm or not self.client:
-            return self._mock_classification(user_input, entities)
+        if settings.mock_llm or not any([self.client, self.openai_client, self.ollama_client]):
+            return self._fallback_classification(user_input, entities)
 
         try:
             # Format the prompt
             prompt = self._format_prompt(user_input, entities, context)
 
-            # Call LLM
-            response = self.client.messages.create(
-                model=settings.claude_model,
-                max_tokens=settings.llm_max_tokens,
-                temperature=settings.llm_temperature,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            # Call appropriate LLM provider
+            if self.provider in ["claude", "anthropic"] and self.client:
+                content = await self._call_claude(prompt)
+            elif self.provider == "openai" and self.openai_client:
+                content = await self._call_openai(prompt)
+            elif self.provider == "ollama" and self.ollama_client:
+                content = await self._call_ollama(prompt)
+            else:
+                return self._fallback_classification(user_input, entities)
 
             # Parse JSON response
-            content = response.content[0].text
             json_match = re.search(r'\{.*\}', content, re.DOTALL)
             if json_match:
                 result = orjson.loads(json_match.group())
@@ -188,6 +235,34 @@ class LLMTriageService:
             logger.error("llm_classification_failed", error=str(e))
             # Fallback to rule-based classification
             return self._fallback_classification(user_input, entities)
+
+    async def _call_claude(self, prompt: str) -> str:
+        """Call Claude API."""
+        response = self.client.messages.create(
+            model=settings.claude_model,
+            max_tokens=settings.llm_max_tokens,
+            temperature=settings.llm_temperature,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.content[0].text
+
+    async def _call_openai(self, prompt: str) -> str:
+        """Call OpenAI API."""
+        response = await self.openai_client.chat.completions.create(
+            model=settings.openai_model,
+            max_tokens=settings.llm_max_tokens,
+            temperature=settings.llm_temperature,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content
+
+    async def _call_ollama(self, prompt: str) -> str:
+        """Call Ollama local LLM."""
+        return await self.ollama_client.generate(
+            prompt=prompt,
+            temperature=settings.llm_temperature,
+            max_tokens=settings.llm_max_tokens
+        )
 
     def _format_prompt(
         self,

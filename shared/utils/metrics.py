@@ -2,14 +2,29 @@
 Metrics collection using Prometheus.
 """
 
-from prometheus_client import Counter, Gauge, Histogram, Summary
+from prometheus_client import Counter, Gauge, Histogram, Summary, REGISTRY
 from typing import Dict
 
 
 class MetricsCollector:
     """Prometheus metrics collector."""
 
+    _instance = None
+    _initialized = False
+
+    def __new__(cls):
+        """Singleton pattern to avoid duplicate metrics registration."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self) -> None:
+        # Skip if already initialized
+        if MetricsCollector._initialized:
+            return
+
+        MetricsCollector._initialized = True
+
         # System health metrics
         self.api_requests = Counter(
             'api_requests_total',

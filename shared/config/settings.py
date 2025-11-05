@@ -24,11 +24,16 @@ class Settings(BaseSettings):
     log_level: str = "info"
 
     # LLM Configuration
-    llm_provider: str = "claude"
+    llm_provider: str = "claude"  # Options: claude, openai, ollama
     anthropic_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     claude_model: str = "claude-sonnet-4-5-20250929"
     openai_model: str = "gpt-4-turbo-preview"
+
+    # Ollama Configuration (local LLM)
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.1:8b"  # or mistral, phi3, etc.
+
     llm_temperature: float = 0.1
     llm_max_tokens: int = 2000
     llm_timeout: int = 30
