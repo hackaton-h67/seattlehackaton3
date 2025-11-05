@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:8000']
+
+  - job_name: 'services'
+    static_configs:
+      - targets:
+        - 'input-processor:8001'
+        - 'entity-extraction:8002'
+        - 'graphrag-orchestrator:8003'
+        - 'llm-triage:8004'
+        - 'ml-prediction:8005'

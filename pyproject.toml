@@ -1,0 +1,191 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "service-sense"
+version = "2.0.0"
+description = "Intelligent Triage & Predictive Resolution System for Seattle Customer Service Requests"
+authors = [
+    {name = "Your Team Name", email = "your.email@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+keywords = ["ai", "machine-learning", "graphrag", "civic-tech", "triage"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    # Web framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+
+    # HTTP & API
+    "httpx>=0.26.0",
+    "aiohttp>=3.9.0",
+
+    # Database clients
+    "asyncpg>=0.29.0",
+    "sqlalchemy>=2.0.25",
+    "neo4j>=5.16.0",
+    "chromadb>=0.4.22",
+    "redis>=5.0.1",
+
+    # ML & Data Science
+    "scikit-learn>=1.4.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "scipy>=1.12.0",
+
+    # NLP & Embeddings
+    "sentence-transformers>=2.3.0",
+    "transformers>=4.37.0",
+    "tokenizers>=0.15.0",
+
+    # LLM clients
+    "anthropic>=0.40.0",
+    "openai>=1.10.0",
+
+    # Audio processing
+    "whisperx>=3.1.1",
+    "torch>=2.1.0",
+    "torchaudio>=2.1.0",
+
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.1",
+    "orjson>=3.9.12",
+    "tenacity>=8.2.3",
+
+    # Monitoring
+    "prometheus-client>=0.19.0",
+    "structlog>=24.1.0",
+
+    # Testing (will also be in dev dependencies)
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "httpx>=0.26.0",
+
+    # Code quality
+    "black>=24.1.0",
+    "ruff>=0.1.14",
+    "mypy>=1.8.0",
+    "isort>=5.13.2",
+
+    # Type stubs
+    "types-redis>=4.6.0",
+    "types-pyyaml>=6.0.12",
+
+    # Development tools
+    "ipython>=8.20.0",
+    "jupyter>=1.0.0",
+    "pre-commit>=3.6.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["shared", "services", "ml"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "whisperx.*",
+    "chromadb.*",
+    "neo4j.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --cov=services --cov=shared --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "e2e: marks tests as end-to-end tests",
+]
+
+[tool.coverage.run]
+source = ["services", "shared", "ml"]
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

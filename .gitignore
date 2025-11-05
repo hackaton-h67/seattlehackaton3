@@ -1,0 +1,114 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# ML Models (too large for git)
+ml/models/*.pkl
+ml/models/*.joblib
+ml/models/*.h5
+ml/models/*.pt
+ml/models/*.pth
+ml/models/*.onnx
+!ml/models/.gitkeep
+
+# Data files
+data/raw/*.csv
+data/raw/*.json
+data/processed/*.parquet
+data/processed/*.feather
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# Monitoring
+prometheus/data/
+grafana/data/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Neo4j
+neo4j/data/
+neo4j/logs/
+
+# ChromaDB
+chromadb/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+*.cert
+credentials.json
+secrets/
