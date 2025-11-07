@@ -175,7 +175,7 @@ See [frontend/README.md](frontend/README.md) for detailed documentation.
 
 ## API Usage
 
-### Triage a Service Request
+### Triage a Service Request (Text)
 
 ```bash
 curl -X POST http://localhost:8000/api/v2/triage \
@@ -188,6 +188,38 @@ curl -X POST http://localhost:8000/api/v2/triage \
     }
   }'
 ```
+
+### Triage a Service Request (Audio)
+
+The system supports audio transcription using **faster-whisper** (OpenAI Whisper optimized for CPU/GPU):
+
+```bash
+# Send base64-encoded audio
+curl -X POST http://localhost:8000/api/v2/triage \
+  -H "Content-Type: application/json" \
+  -d '{
+    "audio": "<base64-encoded-audio-data>",
+    "location": {
+      "latitude": 47.6115,
+      "longitude": -122.3344
+    }
+  }'
+```
+
+**Test Audio Transcription:**
+```bash
+# Test with sample audio file
+python test_audio_transcription.py
+
+# Or use the automated test script
+./scripts/test_audio.sh
+```
+
+**Audio Requirements:**
+- Format: WAV, MP3, or other common audio formats
+- Max duration: 300 seconds (5 minutes)
+- Language: English only
+- Encoding: Base64 for API requests
 
 ### Response Format
 
@@ -243,6 +275,7 @@ See [CLAUDE.md](CLAUDE.md) for detailed development guidelines.
 
 - [INSTALLATION.md](INSTALLATION.md) - Complete installation guide
 - [DATA_LOADING_GUIDE.md](DATA_LOADING_GUIDE.md) - Guide for loading Seattle Open Data
+- [AUDIO_TRANSCRIPTION.md](AUDIO_TRANSCRIPTION.md) - Audio transcription feature guide
 - [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
 - [PRD.md](PRD.md) - Product requirements document
 - [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Executive project summary
