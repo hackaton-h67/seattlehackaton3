@@ -61,66 +61,80 @@ This system uses a microservices architecture:
 ## Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
 - Python 3.11+
-- 16GB RAM minimum
-- GPU (optional, for WhisperX)
+- 8GB RAM minimum (16GB recommended)
+- 10GB free disk space
 
-### Installation
+### Installation (2 minutes)
 
-1. Clone the repository:
 ```bash
+# 1. Clone repository
 git clone <repository-url>
 cd seattlehackaton3
+
+# 2. Run automated installer
+chmod +x install.sh
+./install.sh
+
+# 3. Start API server
+./start_api.sh
 ```
 
-2. Copy environment variables:
+The system is now running at http://localhost:8000
+
+**For detailed installation options**, see [INSTALLATION.md](INSTALLATION.md)
+
+### Optional Enhancements
+
+**Add Ollama (Free Local LLM):**
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.1:8b
+ollama serve
 ```
 
-3. Start all services:
+**Add Full Database Support:**
 ```bash
-docker-compose up -d
-```
+# Start databases
+docker-compose up -d postgres neo4j chromadb redis
 
-4. Initialize the databases:
-```bash
+# Initialize schemas
 python scripts/init_databases.py
-```
 
-5. Load Seattle Open Data:
-```bash
+# Load Seattle service request data (3,811 records)
 python scripts/load_data.py
+
+# Verify data loaded successfully
+python scripts/verify_data.py
 ```
 
-6. Train initial ML models:
+See [INSTALLATION.md](INSTALLATION.md) for complete instructions and [DATA_LOADING_GUIDE.md](DATA_LOADING_GUIDE.md) for data loading details.
+
+### Frontend Setup
+
+The frontend provides Citizen Portal, Admin Dashboard, and Demo interfaces.
+
 ```bash
-python ml/training/train_models.py
+cd frontend
+npm install
+npm run dev
+# Access at http://localhost:3001
 ```
 
-### Development Setup
-
-For local development:
-
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements-dev.txt
-
-# Run services individually
-cd services/api-gateway
-uvicorn main:app --reload --port 8000
-```
+See [frontend/README.md](frontend/README.md) for detailed documentation.
 
 ## Project Structure
 
 ```
 .
+├── frontend/            # React frontend (NEW!)
+│   ├── src/
+│   │   ├── pages/      # Citizen Portal, Admin, Demo
+│   │   ├── components/ # Reusable UI components
+│   │   ├── services/   # API integration
+│   │   └── types/      # TypeScript types
+│   ├── Dockerfile      # Production build
+│   └── README.md       # Frontend docs
 ├── services/              # Microservices
 │   ├── api-gateway/      # Main API entry point
 │   ├── input-processor/  # Text/audio processing
@@ -151,6 +165,11 @@ uvicorn main:app --reload --port 8000
 │   ├── integration/
 │   └── e2e/
 ├── scripts/            # Utility scripts
+│   ├── init_databases.py      # Initialize database schemas
+│   ├── load_data.py           # Load Seattle Open Data
+│   ├── verify_data.py         # Verify data loaded successfully
+│   ├── test_load_small.py     # Test with small data sample
+│   └── run_full_load.sh       # Interactive data loading script
 └── docs/              # Documentation
 ```
 
@@ -200,50 +219,41 @@ curl -X POST http://localhost:8000/api/v2/triage \
 ### Running Tests
 
 ```bash
-# Unit tests
-pytest tests/unit/
-
-# Integration tests
-pytest tests/integration/
-
-# E2E tests
-pytest tests/e2e/
-
-# All tests with coverage
-pytest --cov=services --cov-report=html
+pytest tests/ -v                    # All tests
+pytest --cov=services --cov=shared  # With coverage
 ```
 
 ### Code Quality
 
 ```bash
-# Format code
-black .
-
-# Lint
-ruff check .
-
-# Type checking
-mypy services/
+make format    # Format code
+make lint      # Lint and type check
 ```
 
-## Deployment
-
-See [docs/deployment.md](docs/deployment.md) for production deployment instructions.
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines.
 
 ## Monitoring
 
-Access monitoring dashboards:
+- API Docs: http://localhost:8000/docs
 - Grafana: http://localhost:3000
 - Prometheus: http://localhost:9090
-- API Docs: http://localhost:8000/docs
+- Neo4j Browser: http://localhost:7474
+
+## Documentation
+
+- [INSTALLATION.md](INSTALLATION.md) - Complete installation guide
+- [DATA_LOADING_GUIDE.md](DATA_LOADING_GUIDE.md) - Guide for loading Seattle Open Data
+- [CLAUDE.md](CLAUDE.md) - Development guide for Claude Code
+- [PRD.md](PRD.md) - Product requirements document
+- [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) - Executive project summary
+- [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) - Implementation details
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [SECURITY.md](SECURITY.md) - Security considerations
+- [TEST_REPORT.md](TEST_REPORT.md) - Test results and coverage
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
 
 ## Support
 
